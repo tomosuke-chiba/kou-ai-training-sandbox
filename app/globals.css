@@ -272,41 +272,64 @@ h2 {
   padding: 8px 0;
 }
 
-.expense-list {
-  display: grid;
-  gap: 10px;
+.expense-list-section {
   margin-top: 18px;
 }
 
-.expense-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
-  align-items: center;
+.expense-list-section h3 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.expense-table {
+  width: 100%;
+  border-collapse: collapse;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 14px;
+  overflow: hidden;
 }
 
-.expense-item div {
-  display: grid;
-  gap: 4px;
+.expense-table th,
+.expense-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
 }
 
-.expense-item span,
-.expense-item small {
+.expense-table th {
+  background: #f3f6f4;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.expense-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.expense-title {
+  display: block;
+  font-weight: 700;
+}
+
+.expense-note {
+  display: block;
+  margin-top: 4px;
   color: var(--muted);
 }
 
-.expense-actions {
-  justify-items: end;
-}
-
-.expense-actions button {
-  min-height: 34px;
-  background: #eef2ef;
-  color: var(--ink);
-  padding: 0 12px;
+.expense-amount {
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .roadmap-list {
@@ -355,12 +378,8 @@ h2 {
     grid-template-columns: 1fr;
   }
 
-  .expense-item {
-    align-items: start;
-    flex-direction: column;
-  }
-
-  .expense-actions {
-    justify-items: start;
+  .expense-table {
+    display: block;
+    overflow-x: auto;
   }
 }

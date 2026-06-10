@@ -14,15 +14,15 @@ const initialExpenses = [
     id: "sample-1",
     title: "ランチ",
     amount: 900,
-    category: "Food",
+    category: "食費",
     date: "2026-06-01",
     note: "最初のサンプル"
   },
   {
     id: "sample-2",
-    title: "学習用の本",
+    title: "習い事教材",
     amount: 1800,
-    category: "Learning",
+    category: "子ども費",
     date: "2026-06-02",
     note: "Codex練習"
   }
@@ -59,10 +59,11 @@ export default function Home() {
   const [form, setForm] = useState({
     title: "",
     amount: "",
-    category: "Food",
+    category: "食費",
     date: new Date().toISOString().slice(0, 10),
     note: ""
   });
+  const [formError, setFormError] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [monthFilter, setMonthFilter] = useState("2026-06");
   const [completedSteps, setCompletedSteps] = useState([]);
@@ -80,16 +81,18 @@ export default function Home() {
 
   function addExpense(event) {
     event.preventDefault();
-    const expense = createExpense({
-      ...form,
-      id: `expense-${Date.now()}`
-    });
-    setExpenses((current) => [expense, ...current]);
-    setForm((current) => ({ ...current, title: "", amount: "", note: "" }));
-  }
+    setFormError("");
 
-  function removeExpense(id) {
-    setExpenses((current) => current.filter((expense) => expense.id !== id));
+    try {
+      const expense = createExpense({
+        ...form,
+        id: `expense-${Date.now()}`
+      });
+      setExpenses((current) => [expense, ...current]);
+      setForm((current) => ({ ...current, title: "", amount: "", note: "" }));
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "入力内容を確認してください");
+    }
   }
 
   function toggleStep(index) {
@@ -167,19 +170,20 @@ export default function Home() {
         <div className="budget-layout">
           <form className="expense-form" onSubmit={addExpense}>
             <label>
-              支出名
+              内容
               <input
                 value={form.title}
                 onChange={(event) => updateForm("title", event.target.value)}
-                placeholder="例: コーヒー"
+                placeholder="例: スーパーで買い物"
                 required
               />
             </label>
             <label>
-              金額
+              金額（円）
               <input
                 type="number"
-                min="0"
+                min="1"
+                step="1"
                 value={form.amount}
                 onChange={(event) => updateForm("amount", event.target.value)}
                 placeholder="例: 480"
@@ -215,6 +219,7 @@ export default function Home() {
               />
             </label>
             <button type="submit">支出を追加</button>
+            {formError ? <p className="form-error" role="alert">{formError}</p> : null}
           </form>
 
           <div className="summary-panel">
@@ -255,21 +260,36 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="expense-list">
-          {visibleExpenses.map((expense) => (
-            <article key={expense.id} className="expense-item">
-              <div>
-                <strong>{expense.title}</strong>
-                <span>{expense.category} / {expense.date}</span>
-                {expense.note ? <small>{expense.note}</small> : null}
-              </div>
-              <div className="expense-actions">
-                <strong>{expense.amount.toLocaleString()}円</strong>
-                <button type="button" onClick={() => removeExpense(expense.id)}>削除</button>
-              </div>
-            </article>
-          ))}
-        </div>
+        <section className="expense-list-section" aria-labelledby="expense-list-heading">
+          <h3 id="expense-list-heading">支出一覧</h3>
+          {expenses.length === 0 ? (
+            <p className="empty-state">支出がまだありません。フォームから追加してください。</p>
+          ) : (
+            <table className="expense-table">
+              <thead>
+                <tr>
+                  <th scope="col">日付</th>
+                  <th scope="col">内容</th>
+                  <th scope="col">カテゴリ</th>
+                  <th scope="col">金額</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenses.map((expense) => (
+                  <tr key={expense.id}>
+                    <td>{expense.date}</td>
+                    <td>
+                      <span className="expense-title">{expense.title}</span>
+                      {expense.note ? <small className="expense-note">{expense.note}</small> : null}
+                    </td>
+                    <td>{expense.category}</td>
+                    <td className="expense-amount">{expense.amount.toLocaleString()}円</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
       </section>
 
       <section className="roadmap-band">
