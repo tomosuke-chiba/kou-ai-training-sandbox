@@ -3,6 +3,8 @@
 ---
 
 ## 🍴 まず fork してください（推奨）
+<img width="1470" height="493" alt="image" src="https://github.com/user-attachments/assets/acce9f31-b712-412b-837f-f0f00b995a7b" />
+↑の「Fork」を押してください
 
 このリポジトリは **fork して自分のアカウントにコピーしてから使う** ことを推奨しています。
 
