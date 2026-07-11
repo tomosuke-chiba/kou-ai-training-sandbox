@@ -1,0 +1,349 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts";
+
+const paymentDays = Array.from({ length: 31 }, (_, index) => index + 1);
+
+export default function KoteiHiPage() {
+  const [fixedCosts, setFixedCosts] = useState([]);
+  const [form, setForm] = useState({
+    name: "",
+    amount: "",
+    paymentDay: "15"
+  });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    amount: "",
+    paymentDay: "15"
+  });
+  const [previousMonthTotal, setPreviousMonthTotal] = useState(null);
+  const [monthlyHistory, setMonthlyHistory] = useState([]);
+  const [chartReady, setChartReady] = useState(false);
+  const monthlyTotal = fixedCosts.reduce(
+    (total, fixedCost) => total + fixedCost.amount,
+    0
+  );
+  const monthlyDifference =
+    previousMonthTotal === null ? null : monthlyTotal - previousMonthTotal;
+  const differenceColor =
+    monthlyDifference === null || monthlyDifference === 0
+      ? "inherit"
+      : monthlyDifference < 0
+        ? "#18715f"
+        : "#b42318";
+  const monthlyDifferenceText =
+    monthlyDifference === null
+      ? ""
+      : `${monthlyDifference > 0 ? "+" : ""}${monthlyDifference.toLocaleString()}円`;
+  const chartData = [
+    ...monthlyHistory,
+    {
+      month: "今月",
+      total: monthlyTotal
+    }
+  ];
+
+  useEffect(() => {
+    setChartReady(true);
+  }, []);
+
+  function updateForm(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateEditForm(field, value) {
+    setEditForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function addFixedCost(event) {
+    event.preventDefault();
+
+    const fixedCost = {
+      id: `fixed-cost-${Date.now()}`,
+      name: form.name,
+      amount: Number(form.amount),
+      paymentDay: form.paymentDay
+    };
+
+    setFixedCosts((current) => [fixedCost, ...current]);
+    setForm({ name: "", amount: "", paymentDay: "15" });
+  }
+
+  function startEditing(fixedCost) {
+    setEditingId(fixedCost.id);
+    setEditForm({
+      name: fixedCost.name,
+      amount: String(fixedCost.amount),
+      paymentDay: fixedCost.paymentDay
+    });
+  }
+
+  function cancelEditing() {
+    setEditingId(null);
+    setEditForm({ name: "", amount: "", paymentDay: "15" });
+  }
+
+  function saveEditing(event) {
+    event.preventDefault();
+
+    setFixedCosts((current) =>
+      current.map((fixedCost) =>
+        fixedCost.id === editingId
+          ? {
+              ...fixedCost,
+              name: editForm.name,
+              amount: Number(editForm.amount),
+              paymentDay: editForm.paymentDay
+            }
+          : fixedCost
+      )
+    );
+    cancelEditing();
+  }
+
+  function deleteFixedCost(fixedCost) {
+    const confirmed = window.confirm(
+      `${fixedCost.name}を削除しますか？`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setFixedCosts((current) =>
+      current.filter((currentFixedCost) => currentFixedCost.id !== fixedCost.id)
+    );
+  }
+
+  function confirmCurrentMonth() {
+    setMonthlyHistory((current) => [
+      ...current,
+      {
+        month: `${current.length + 1}ヶ月目`,
+        total: monthlyTotal
+      }
+    ]);
+    setPreviousMonthTotal(monthlyTotal);
+  }
+
+  return (
+    <main className="page-shell">
+      <section className="intro-band">
+        <div>
+          <p className="eyebrow">Kotei-hi MVP</p>
+          <h1>固定費を登録する</h1>
+          <p className="lead">
+            サブスクや家賃など、毎月かかる固定費を入力して一覧に追加できます。
+          </p>
+        </div>
+      </section>
+
+      <section className="app-band">
+        <div className="panel-heading">
+          <p className="eyebrow">Issue 1</p>
+          <h2>固定費フォーム</h2>
+        </div>
+
+        <div className="budget-layout">
+          <form className="expense-form" onSubmit={addFixedCost}>
+            <label>
+              固定費の名前
+              <input
+                value={form.name}
+                onChange={(event) => updateForm("name", event.target.value)}
+                placeholder="例: Netflix"
+                required
+              />
+            </label>
+
+            <label>
+              月額金額
+              <input
+                type="number"
+                min="0"
+                value={form.amount}
+                onChange={(event) => updateForm("amount", event.target.value)}
+                placeholder="例: 1490"
+                required
+              />
+            </label>
+
+            <label className="wide">
+              支払日
+              <select
+                value={form.paymentDay}
+                onChange={(event) => updateForm("paymentDay", event.target.value)}
+              >
+                {paymentDays.map((day) => (
+                  <option key={day} value={String(day)}>
+                    毎月{day}日
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <button type="submit">追加</button>
+          </form>
+
+          <div className="summary-panel" aria-label="固定費一覧">
+            <div className="panel-heading">
+              <p className="eyebrow">List</p>
+              <h2>一覧エリア</h2>
+            </div>
+
+            <div className="total-card">
+              <span>月合計</span>
+              <strong>合計: {monthlyTotal.toLocaleString()}円</strong>
+            </div>
+
+            <div className="total-card">
+              <span>前月との比較</span>
+              {previousMonthTotal === null ? (
+                <p className="helper-text">比較できる前月データがありません。</p>
+              ) : (
+                <>
+                  <strong>先月: {previousMonthTotal.toLocaleString()}円</strong>
+                  <strong>今月: {monthlyTotal.toLocaleString()}円</strong>
+                  <strong style={{ color: differenceColor }}>
+                    差額: {monthlyDifferenceText}
+                  </strong>
+                </>
+              )}
+              <div className="expense-actions">
+                <button type="button" onClick={confirmCurrentMonth}>
+                  今月を確定
+                </button>
+              </div>
+            </div>
+
+            <div className="total-card">
+              <span>月合計の推移</span>
+              <div style={{ height: 240, width: "100%" }}>
+                {chartReady && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 12, right: 12 }}>
+                      <CartesianGrid stroke="#315047" strokeDasharray="3 3" />
+                      <XAxis dataKey="month" stroke="#b8cbc4" />
+                      <YAxis
+                        stroke="#b8cbc4"
+                        tickFormatter={(value) => `${value.toLocaleString()}円`}
+                        width={86}
+                      />
+                      <Tooltip
+                        formatter={(value) => [
+                          `${value.toLocaleString()}円`,
+                          "月合計"
+                        ]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="total"
+                        stroke="#dff3ec"
+                        strokeWidth={3}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+
+            <div className="expense-list">
+              {fixedCosts.length === 0 ? (
+                <p className="helper-text">まだ固定費は登録されていません。</p>
+              ) : (
+                fixedCosts.map((fixedCost) => (
+                  <div className="expense-item" key={fixedCost.id}>
+                    {editingId === fixedCost.id ? (
+                      <form className="expense-form" onSubmit={saveEditing}>
+                        <label>
+                          固定費の名前
+                          <input
+                            value={editForm.name}
+                            onChange={(event) =>
+                              updateEditForm("name", event.target.value)
+                            }
+                            required
+                          />
+                        </label>
+
+                        <label>
+                          月額金額
+                          <input
+                            type="number"
+                            min="0"
+                            value={editForm.amount}
+                            onChange={(event) =>
+                              updateEditForm("amount", event.target.value)
+                            }
+                            required
+                          />
+                        </label>
+
+                        <label>
+                          支払日
+                          <select
+                            value={editForm.paymentDay}
+                            onChange={(event) =>
+                              updateEditForm("paymentDay", event.target.value)
+                            }
+                          >
+                            {paymentDays.map((day) => (
+                              <option key={day} value={String(day)}>
+                                毎月{day}日
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <div className="expense-actions">
+                          <button type="submit">保存</button>
+                          <button type="button" onClick={cancelEditing}>
+                            キャンセル
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        <div>
+                          <strong>{fixedCost.name}</strong>
+                          <small>{fixedCost.amount.toLocaleString()}円</small>
+                        </div>
+                        <span>{fixedCost.paymentDay}日</span>
+                        <div className="expense-actions">
+                          <button
+                            type="button"
+                            onClick={() => startEditing(fixedCost)}
+                          >
+                            編集
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteFixedCost(fixedCost)}
+                          >
+                            削除
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
