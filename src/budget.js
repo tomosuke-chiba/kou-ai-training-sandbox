@@ -1,11 +1,4 @@
-export const defaultCategories = [
-  "Food",
-  "Daily goods",
-  "Transport",
-  "Learning",
-  "Fun",
-  "Other"
-];
+export const defaultCategories = ["食費", "生活費", "子ども費"];
 
 export function normalizeAmount(value) {
   const amount = Number(value);
@@ -17,17 +10,26 @@ export function normalizeAmount(value) {
 
 export function createExpense(input) {
   const title = String(input.title || "").trim();
-  const category = String(input.category || "Other").trim() || "Other";
+  const category = String(input.category || defaultCategories[0]).trim() || defaultCategories[0];
   const date = String(input.date || new Date().toISOString().slice(0, 10));
 
   if (!title) {
     throw new Error("title is required");
   }
 
+  const amount = normalizeAmount(input.amount);
+  if (amount <= 0) {
+    throw new Error("amount must be a positive integer");
+  }
+
+  if (!defaultCategories.includes(category)) {
+    throw new Error("category is invalid");
+  }
+
   return {
     id: input.id || `expense-${Date.now()}`,
     title,
-    amount: normalizeAmount(input.amount),
+    amount,
     category,
     date,
     note: String(input.note || "").trim()
